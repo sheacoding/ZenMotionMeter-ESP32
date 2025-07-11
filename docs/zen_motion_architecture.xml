@@ -1,0 +1,94 @@
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36" version="27.2.0">
+  <diagram id="zen-motion-architecture" name="系统架构图">
+    <mxGraphModel dx="1213" dy="764" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="气定神闲仪 (Zen-Motion Meter) 系统架构" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=16;fontStyle=1" parent="1" vertex="1">
+          <mxGeometry x="250" y="30" width="320" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="hardware-layer" value="硬件层 (Hardware Layer)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;verticalAlign=top;fontSize=14;fontStyle=1" parent="1" vertex="1">
+          <mxGeometry x="50" y="80" width="720" height="220" as="geometry" />
+        </mxCell>
+        <mxCell id="esp32" value="ESP32-C3 SuperMini&#xa;(核心处理器)&#xa;&#xa;• 数据采集处理&#xa;• 无线通信&#xa;• 电源管理" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12" parent="1" vertex="1">
+          <mxGeometry x="80" y="120" width="150" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="mpu6050" value="MPU6050&#xa;陀螺仪+加速度计&#xa;&#xa;• 6轴运动检测&#xa;• I2C接口&#xa;• 实时稳定性监测" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12" parent="1" vertex="1">
+          <mxGeometry x="260" y="120" width="150" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="oled" value="OLED显示屏&#xa;0.96寸 SSD1306&#xa;&#xa;• 稳定性评分显示&#xa;• 时长信息显示&#xa;• 状态提示显示" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12" parent="1" vertex="1">
+          <mxGeometry x="440" y="120" width="150" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="buzzer" value="蜂鸣器&#xa;&#xa;• 破定提醒&#xa;• 计时结束提示" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=12" parent="1" vertex="1">
+          <mxGeometry x="80" y="240" width="120" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="battery" value="锂电池&#xa;&#xa;• 系统供电&#xa;• 电量监控" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12" parent="1" vertex="1">
+          <mxGeometry x="230" y="240" width="120" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="i2c-bus" value="I2C总线" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e6e6e6;strokeColor=#666666;fontSize=12" parent="1" vertex="1">
+          <mxGeometry x="620" y="150" width="120" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="software-layer" value="软件层 (Software Layer)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;verticalAlign=top;fontSize=14;fontStyle=1" parent="1" vertex="1">
+          <mxGeometry x="50" y="330" width="720" height="280" as="geometry" />
+        </mxCell>
+        <mxCell id="data-module" value="数据采集模块&#xa;&#xa;• MPU6050数据读取&#xa;• 传感器数据预处理&#xa;• Wire库" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11" parent="1" vertex="1">
+          <mxGeometry x="80" y="360" width="140" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="stability-module" value="稳定性计算模块&#xa;&#xa;• 加速度数据分析&#xa;• 标准差计算&#xa;• 评分(0-100)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11" parent="1" vertex="1">
+          <mxGeometry x="240" y="360" width="140" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="time-module" value="时长记录模块&#xa;&#xa;• 练习时长记录&#xa;• 累计时长统计&#xa;• 7日历史数据" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11" parent="1" vertex="1">
+          <mxGeometry x="400" y="360" width="140" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="alert-module" value="破定提醒模块&#xa;&#xa;• 阈值监控(&lt;50)&#xa;• 蜂鸣器控制&#xa;• 状态显示" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=11" parent="1" vertex="1">
+          <mxGeometry x="560" y="360" width="140" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="display-module" value="显示控制模块&#xa;&#xa;• OLED屏幕控制&#xa;• UI界面更新&#xa;• 信息显示" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11" parent="1" vertex="1">
+          <mxGeometry x="80" y="460" width="140" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="timer-module" value="计时器模块&#xa;&#xa;• 倒计时功能&#xa;• 练习时长提醒&#xa;• millis()实现" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11" parent="1" vertex="1">
+          <mxGeometry x="240" y="460" width="140" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="system-module" value="系统管理模块&#xa;&#xa;• 电池电量管理&#xa;• 休眠模式控制&#xa;• 系统监控" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11" parent="1" vertex="1">
+          <mxGeometry x="400" y="460" width="140" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="storage-module" value="数据存储模块&#xa;&#xa;• 历史数据保存&#xa;• 练习记录管理&#xa;• 数据清理" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11" parent="1" vertex="1">
+          <mxGeometry x="560" y="460" width="140" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="ui-layer" value="用户界面 (User Interface)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;verticalAlign=top;fontSize=14;fontStyle=1" parent="1" vertex="1">
+          <mxGeometry x="50" y="640" width="720" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="ui-layout" value="OLED显示布局&#xa;┌─────────────────────┐&#xa;│  稳定性评分: 85     │&#xa;│  练习时长: 05:20    │&#xa;│  累计时长: 1h 30m   │&#xa;│  ----破定提醒----   │&#xa;└─────────────────────┘" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;fontFamily=Courier New;align=left" parent="1" vertex="1">
+          <mxGeometry x="300" y="670" width="200" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="conn1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="esp32" target="mpu6050" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="mpu6050" target="oled" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="esp32" target="buzzer" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="mpu6050" target="battery" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="data-flow1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;dashed=1;dashPattern=5 5;strokeColor=#ff6666;" parent="1" source="data-module" target="display-module" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="data-flow2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;dashed=1;dashPattern=5 5;strokeColor=#ff6666;" parent="1" source="data-module" target="stability-module" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="data-flow3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;dashed=1;dashPattern=5 5;strokeColor=#ff6666;" parent="1" source="stability-module" target="time-module" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="data-flow4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;dashed=1;dashPattern=5 5;strokeColor=#ff6666;" parent="1" source="time-module" target="alert-module" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="legend" value="图例&#xa;─────  硬件连接&#xa;- - - - - 数据流向" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=10;align=left" parent="1" vertex="1">
+          <mxGeometry x="80" y="570" width="120" height="50" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
