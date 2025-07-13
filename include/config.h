@@ -4,7 +4,7 @@
 // ==================== 项目信息 ====================
 #define PROJECT_NAME "气定神闲仪 (Zen-Motion Meter)"
 #define PROJECT_VERSION "1.0.0"
-#define AUTHOR "Zen-Motion Team"
+#define AUTHOR "ericoding"
 
 // ==================== 硬件引脚配置 ====================
 // 智能引脚配置 - 根据开发板类型自动选择
