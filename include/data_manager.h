@@ -5,6 +5,7 @@
 #include <EEPROM.h>
 #include "config.h"
 #include "data_types.h"
+#include "time_manager.h"
 
 class DataManager {
 private:
@@ -22,21 +23,27 @@ private:
   unsigned long lastSaveTime = 0;
   bool dataChanged = false;
   
+  // 时间管理
+  TimeManager* timeManager = nullptr;
+  DateTime lastCheckDate;
+  
   // 内部方法
   void initializeDefaultSettings();
   void updateTodayStats();
   void saveToEEPROM();
   void loadFromEEPROM();
-  bool isNewDay();
+  bool checkAndUpdateDate();
   void rotateHistoryData();
+  void moveTodayToHistory();
+  void resetTodayStats();
   uint8_t getCurrentDayOfWeek();
-  void calculateDailyStats();
+  void calculateWeeklyStats(unsigned long& totalTime, int& totalSessions, float& avgStability);
   
 public:
   DataManager();
   
   // 初始化
-  bool initialize();
+  bool initialize(TimeManager* timeManager = nullptr);
   void reset();
   
   // 会话管理

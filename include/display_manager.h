@@ -4,9 +4,9 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include <U8g2lib.h>
-#include <u8g2_wqy.h>
 #include "config.h"
 #include "data_types.h"
+#include "settings_menu.h"
 
 class DisplayManager {
 private:
@@ -36,6 +36,9 @@ private:
   MainMenuOption currentMenuOption = MENU_START_PRACTICE;
   unsigned long lastMenuScroll = 0;
   
+  // 设置菜单相关
+  SettingsMenuState settingsState;
+  
   // 内部方法
   void drawBootAnimationPage(const ZenMotionData& data);
   void drawMainMenuPage(const ZenMotionData& data);
@@ -44,13 +47,13 @@ private:
   void drawSettingsPage(const ZenMotionData& data);
   void drawCalibrationPage(const ZenMotionData& data);
   void drawHistoryPage(const ZenMotionData& data);
+  void drawDateTimeEditPage(const ZenMotionData& data);
   
   // UI组件绘制方法
   void drawStabilityScore(int x, int y, float score, bool isStable);
   void drawTimeDisplay(int x, int y, unsigned long timeMs, bool showSeconds = true);
   void drawProgressBar(int x, int y, int width, int height, float percentage);
   void drawBatteryIcon(int x, int y, float voltage, bool isCharging);
-  void drawWiFiIcon(int x, int y, bool connected);
   void drawStatusIcons(const ZenMotionData& data);
   
   // 文本和图形辅助方法
@@ -94,6 +97,13 @@ public:
   void nextMenuOption();
   void previousMenuOption();
   MainMenuOption getSelectedMenuOption() const;
+  
+  // 设置菜单管理
+  SettingsMenuState& getSettingsState() { return settingsState; }
+  void enterDateTimeEdit();
+  void exitDateTimeEdit();
+  void adjustDateTimeValue(bool increase);
+  void adjustSettingValue(bool increase);
   
   // 显示更新
   void update(const ZenMotionData& data);

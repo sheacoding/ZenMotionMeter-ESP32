@@ -21,6 +21,8 @@ private:
   unsigned long doubleClickThreshold = 300;  // 双击阈值 (ms)
   unsigned long lastClickTime = 0;
   bool waitingForDoubleClick = false;
+  bool pendingSingleClick = false;           // 待处理的单击事件
+  unsigned long singleClickDelayTime = 0;    // 单击延迟处理时间
   
   // 蜂鸣器状态
   AudioData audioData;

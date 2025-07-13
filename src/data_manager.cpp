@@ -28,17 +28,25 @@ DataManager::DataManager() {
   }
 }
 
-bool DataManager::initialize() {
+bool DataManager::initialize(TimeManager* tm) {
   // 初始化EEPROM
   EEPROM.begin(EEPROM_SIZE);
   
   // 加载数据
   loadData();
   
-  // 检查是否是新的一天
-  if (isNewDay()) {
-    rotateHistoryData();
+  // 设置时间管理器
+  timeManager = tm;
+  if (timeManager) {
+    lastCheckDate = timeManager->getCurrentDateTime();
+    // 更新今日日期
+    todayStats.year = lastCheckDate.year;
+    todayStats.month = lastCheckDate.month;
+    todayStats.day = lastCheckDate.day;
   }
+  
+  // 检查并更新日期
+  checkAndUpdateDate();
   
   // 初始化默认设置
   if (settings.stabilityThreshold == 0) {
@@ -318,19 +326,91 @@ void DataManager::loadFromEEPROM() {
   }
 }
 
-bool DataManager::isNewDay() {
-  // 简单的日期检查，实际应用中可能需要RTC
-  // 这里使用系统运行时间的简单估算
-  static unsigned long lastDayCheck = 0;
-  unsigned long currentTime = millis();
-
-  // 如果超过24小时，认为是新的一天
-  if (currentTime - lastDayCheck > 86400000) { // 24小时 = 86400000ms
-    lastDayCheck = currentTime;
+bool DataManager::checkAndUpdateDate() {
+  if (!timeManager) {
+    // 没有时间管理器，使用简单的时间检查
+    static unsigned long lastDayCheck = 0;
+    unsigned long currentTime = millis();
+    
+    // 如果超过24小时，认为是新的一天
+    if (currentTime - lastDayCheck > 86400000) { // 24小时 = 86400000ms
+      lastDayCheck = currentTime;
+      rotateHistoryData();
+      return true;
+    }
+    return false;
+  }
+  
+  // 使用时间管理器检查
+  DateTime currentDate = timeManager->getCurrentDateTime();
+  if (timeManager->isNewDay(lastCheckDate)) {
+    DEBUG_INFO("DATA_MANAGER", "检测到新的一天: %s", 
+               timeManager->formatDate(currentDate).c_str());
+    
+    // 计算天数差
+    int daysDiff = timeManager->getDaysDifference(lastCheckDate, currentDate);
+    
+    // 如果只过了一天，正常轮转
+    if (daysDiff == 1) {
+      moveTodayToHistory();
+    } 
+    // 如果过了多天，需要处理空缺的天数
+    else if (daysDiff > 1) {
+      // 先保存今天的数据
+      moveTodayToHistory();
+      
+      // 对于中间的空缺天数，插入空数据
+      for (int i = 1; i < daysDiff - 1 && i < MAX_HISTORY_DAYS; i++) {
+        DailyStats emptyDay = {};
+        emptyDay.year = lastCheckDate.year;
+        emptyDay.month = lastCheckDate.month;
+        emptyDay.day = lastCheckDate.day + i;
+        
+        // 将历史数据向后移动
+        for (int j = MAX_HISTORY_DAYS - 1; j > 0; j--) {
+          historyStats[j] = historyStats[j - 1];
+        }
+        historyStats[0] = emptyDay;
+      }
+    }
+    
+    // 重置今日数据
+    resetTodayStats();
+    todayStats.year = currentDate.year;
+    todayStats.month = currentDate.month;
+    todayStats.day = currentDate.day;
+    
+    lastCheckDate = currentDate;
+    dataChanged = true;
+    forceSave(); // 立即保存
+    
     return true;
   }
-
+  
   return false;
+}
+
+void DataManager::moveTodayToHistory() {
+  // 将历史数据向后移动一位
+  for (int i = MAX_HISTORY_DAYS - 1; i > 0; i--) {
+    historyStats[i] = historyStats[i - 1];
+  }
+  
+  // 将今日数据移到历史数据的第一位
+  historyStats[0] = todayStats;
+  
+  DEBUG_INFO("DATA_MANAGER", "今日数据已保存到历史: %d/%d/%d, 练习%d次, 总时长%lums",
+             todayStats.year, todayStats.month, todayStats.day,
+             todayStats.sessionCount, todayStats.totalTime);
+}
+
+void DataManager::resetTodayStats() {
+  todayStats.totalTime = 0;
+  todayStats.sessionCount = 0;
+  todayStats.avgStability = 0.0;
+  todayStats.bestStability = 0.0;
+  todayStats.totalBreaks = 0;
+  // 日期信息由调用者设置
 }
 
 void DataManager::rotateHistoryData() {
