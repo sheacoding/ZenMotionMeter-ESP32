@@ -7,6 +7,8 @@
 #include "data_manager.h"
 #include "power_manager.h"
 #include "diagnostic_utils.h"
+#include "time_manager.h"
+#include "settings_menu.h"
 
 // ==================== 全局对象 ====================
 SensorManager sensorManager;
@@ -14,6 +16,7 @@ DisplayManager displayManager;
 InputManager inputManager;
 DataManager dataManager;
 PowerManager powerManager;
+TimeManager* timeManager = nullptr;  // 时间管理器
 
 // ==================== 全局数据 ====================
 ZenMotionData zenData;
@@ -168,10 +171,21 @@ void initializeSystem() {
     }
   }
 
+  // 初始化时间管理器
+  DEBUG_INFO("INIT", "初始化时间管理器...");
+  timeManager = new TimeManager();
+  if (timeManager && timeManager->initialize()) {
+    DEBUG_INFO("INIT", "✓ 时间管理器初始化成功");
+  } else {
+    DEBUG_WARN("INIT", "时间管理器初始化失败");
+    delete timeManager;
+    timeManager = nullptr;
+  }
+
   // 初始化数据管理器
   DEBUG_INFO("INIT", "初始化数据管理器...");
   PERFORMANCE_START("DATA_INIT");
-  if (!dataManager.initialize()) {
+  if (!dataManager.initialize(timeManager)) {
     DEBUG_ERROR("INIT", "数据管理器初始化失败!");
     DiagnosticUtils::reportError("INIT", "数据管理器初始化失败");
     return;
@@ -237,7 +251,8 @@ void initializeSystem() {
   inputManager.playStartSound();
 
   systemInitialized = true;
-  currentState = STATE_IDLE;
+  // 保持开机动画状态，让其自然过渡到主菜单
+  // currentState已经在全局初始化为STATE_BOOT_ANIMATION
 
   PERFORMANCE_END("SYSTEM_INIT");
   DEBUG_INFO("INIT", "✓ 系统初始化完成!");
@@ -286,6 +301,9 @@ void updateDisplay() {
   zenData.status.isCharging = powerManager.isBatteryCharging();
   zenData.status.lowBattery = powerManager.isLowBattery();
 
+  // 更新会话时长为实时值
+  zenData.currentSession.duration = dataManager.getSessionDuration();
+
   // 更新系统状态相关数据
   zenData.status.currentState = currentState;
   zenData.status.uptime = millis();
@@ -294,8 +312,8 @@ void updateDisplay() {
   switch (currentState) {
     case STATE_PRACTICING:
     case STATE_PAUSED:
-      // 确保会话数据是最新的
-      zenData.currentSession = dataManager.getCurrentSession();
+      // 不要重新获取会话数据，保持实时时长
+      // zenData.currentSession = dataManager.getCurrentSession();
       break;
 
     case STATE_CALIBRATING:
@@ -401,9 +419,38 @@ void handleSingleClick() {
       break;
 
     case STATE_SETTINGS:
+      {
+        DEBUG_INFO("STATE", "✓ 设置界面收到单击事件");
+        SettingsMenuState& settingsState = displayManager.getSettingsState();
+        DEBUG_INFO("STATE", "设置状态: inDateTimeEdit=%d, currentItem=%d", 
+                   settingsState.inDateTimeEdit, (int)settingsState.currentItem);
+        
+        if (settingsState.inDateTimeEdit) {
+          // 日期时间编辑模式 - 单击增加当前项
+          DEBUG_INFO("STATE", "日期时间编辑 - 增加值");
+          displayManager.adjustDateTimeValue(true);
+        } else {
+          // 普通设置菜单 - 单击切换到下一个设置项
+          DEBUG_INFO("STATE", "设置页面 - 切换到下一个设置项");
+          int nextItem = (int)settingsState.currentItem + 1;
+          if (nextItem >= SETTINGS_ITEM_COUNT) {
+            nextItem = 0;
+          }
+          DEBUG_INFO("STATE", "从设置项 %d 切换到 %d", (int)settingsState.currentItem, nextItem);
+          settingsState.currentItem = (SettingsMenuItem)nextItem;
+          
+          // 更新滚动状态
+          updateSettingsMenuScroll(settingsState);
+          
+          displayManager.forceUpdate();
+          DEBUG_INFO("STATE", "✓ 设置项切换完成，当前设置项: %d", settingsState.currentItem);
+        }
+      }
+      break;
+      
     case STATE_HISTORY:
-      // 在设置或历史页面中的导航
-      DEBUG_INFO("STATE", "页面内导航");
+      // 在历史页面中的导航
+      DEBUG_INFO("STATE", "历史页面导航");
       displayManager.showMessage("导航功能", 500);
       break;
 
@@ -444,9 +491,17 @@ void handleLongPress() {
           break;
 
         case MENU_SYSTEM_SETTINGS:
-          DEBUG_INFO("STATE", "选择系统设置");
-          changeSystemState(STATE_SETTINGS, "菜单选择系统设置");
-          displayManager.showMessage("系统设置", 1000);
+          {
+            DEBUG_INFO("STATE", "选择系统设置");
+            // 初始化设置菜单状态
+            SettingsMenuState& settingsState = displayManager.getSettingsState();
+            settingsState.currentItem = SETTINGS_STABILITY_THRESHOLD;
+            settingsState.inDateTimeEdit = false;
+            settingsState.editMode = false;
+            settingsState.scrollOffset = 0;  // 重置滚动偏移
+            changeSystemState(STATE_SETTINGS, "菜单选择系统设置");
+            displayManager.showMessage("系统设置", 1000);
+          }
           break;
 
         case MENU_SENSOR_CALIBRATION:
@@ -500,8 +555,54 @@ void handleLongPress() {
       break;
 
     case STATE_SETTINGS:
+      {
+        SettingsMenuState& settingsState = displayManager.getSettingsState();
+        
+        if (settingsState.inDateTimeEdit) {
+          // 日期时间编辑模式
+          if (!settingsState.editMode) {
+            // 未进入编辑模式，长按进入编辑模式
+            DEBUG_INFO("STATE", "进入日期时间编辑模式");
+            settingsState.editMode = true;
+            displayManager.showMessage("编辑模式", 500);
+          } else {
+            // 已在编辑模式，长按移动到下一项
+            DEBUG_INFO("STATE", "日期时间编辑 - 下一项");
+            // 移动到下一个编辑项
+            int nextItem = (int)settingsState.currentDateTimeItem + 1;
+            if (nextItem >= DATETIME_ITEM_COUNT) {
+              // 已经是最后一项，保存并退出
+              DEBUG_INFO("STATE", "保存日期时间设置");
+              if (timeManager) {
+                timeManager->setDateTime(settingsState.editingDateTime);
+              }
+              displayManager.exitDateTimeEdit();
+              displayManager.showMessage("时间已设置", 1000);
+            } else {
+              settingsState.currentDateTimeItem = (DateTimeEditItem)nextItem;
+              displayManager.showMessage("下一项", 500);
+            }
+          }
+        } else {
+          // 普通设置菜单
+          SettingsMenuItem currentItem = settingsState.currentItem;
+          if (currentItem == SETTINGS_DATE_TIME) {
+            // 选择了日期时间设置项，进入日期时间编辑
+            DEBUG_INFO("STATE", "进入日期时间设置");
+            displayManager.enterDateTimeEdit();
+            displayManager.showMessage("日期时间设置", 1000);
+          } else {
+            // 其他设置项，返回主菜单
+            DEBUG_INFO("STATE", "返回主菜单");
+            changeSystemState(STATE_MAIN_MENU, "长按返回主菜单");
+            displayManager.showMessage("返回主菜单", 1000);
+          }
+        }
+      }
+      break;
+      
     case STATE_HISTORY:
-      // 从设置或历史页面返回主菜单
+      // 从历史页面返回主菜单
       DEBUG_INFO("STATE", "返回主菜单");
       changeSystemState(STATE_MAIN_MENU, "长按返回主菜单");
       displayManager.showMessage("返回主菜单", 1000);
@@ -555,6 +656,37 @@ void handleDoubleClick() {
       DEBUG_INFO("STATE", "旧菜单双击返回主菜单");
       changeSystemState(STATE_MAIN_MENU, "双击返回主菜单");
       displayManager.showMessage("返回主菜单", 500);
+      break;
+      
+    case STATE_SETTINGS:
+      {
+        SettingsMenuState& settingsState = displayManager.getSettingsState();
+        
+        if (settingsState.inDateTimeEdit) {
+          // 日期时间编辑模式 - 双击减少当前项
+          DEBUG_INFO("STATE", "日期时间编辑 - 减少值");
+          displayManager.adjustDateTimeValue(false);
+        } else {
+          // 普通设置菜单 - 调整当前设置项的值
+          DEBUG_INFO("STATE", "设置页面 - 调整设置值");
+          
+          // 对于布尔值，双击会切换；对于数值，双击会增加
+          SettingsMenuItem currentItem = settingsState.currentItem;
+          if (currentItem == SETTINGS_SOUND || currentItem == SETTINGS_AUTO_SLEEP) {
+            // 布尔值设置项，双击切换
+            displayManager.adjustSettingValue(true);  // direction 无关紧要，会切换
+          } else if (currentItem == SETTINGS_DATE_TIME) {
+            // 日期时间项，双击进入编辑模式
+            DEBUG_INFO("STATE", "双击进入日期时间设置");
+            displayManager.enterDateTimeEdit();
+            displayManager.showMessage("日期时间设置", 1000);
+          } else {
+            // 数值设置项，双击增加
+            displayManager.adjustSettingValue(true);
+          }
+          displayManager.forceUpdate();
+        }
+      }
       break;
 
     default:
@@ -686,7 +818,16 @@ void handleMenuState() {
 
 void handleSettingsState() {
   // 设置状态处理
-  // 可以处理设置修改逻辑
+  SettingsMenuState& settingsState = displayManager.getSettingsState();
+  
+  // 如果在日期时间编辑模式
+  if (settingsState.inDateTimeEdit) {
+    // 日期时间编辑逻辑在按钮处理中完成
+    return;
+  }
+  
+  // 普通设置页面逻辑
+  // 更新设置显示
 }
 
 void handleSleepState() {
@@ -760,7 +901,10 @@ void changeSystemState(SystemState newState, const char* reason) {
   }
 
   // 执行状态转换
-  currentState = newState;
+currentState = newState;
+  if(newState == STATE_MAIN_MENU) {
+    displayManager.setMenuOption(MENU_START_PRACTICE); // 初始化当前选中菜单项
+  }
 
   // 记录状态转换
   DEBUG_INFO("STATE", "状态转换: %d -> %d (%s)", oldState, newState, reason);

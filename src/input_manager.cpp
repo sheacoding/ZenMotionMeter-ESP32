@@ -13,6 +13,8 @@ InputManager::InputManager() {
   waitingForDoubleClick = false;
   lastClickTime = 0;
   buttonPressTime = 0;
+  pendingSingleClick = false;
+  singleClickDelayTime = 0;
 
   // 初始化音频数据
   audioData.enabled = true;
@@ -49,6 +51,8 @@ void InputManager::reset() {
   waitingForDoubleClick = false;
   buttonPressTime = 0;
   lastClickTime = 0;
+  pendingSingleClick = false;
+  singleClickDelayTime = 0;
 
   // 停止蜂鸣器
   stopBuzzer();
@@ -101,37 +105,53 @@ void InputManager::processButtonEvent() {
 
     // 判断是长按还是短按
     if (buttonEvent.duration >= longPressThreshold) {
+      // 长按立即生成事件
       buttonEvent.state = BUTTON_LONG_PRESSED;
       buttonEvent.processed = false;
       hasEvent = true;
+      // 取消任何等待中的单击事件
+      pendingSingleClick = false;
+      waitingForDoubleClick = false;
       DEBUG_INFO("INPUT", "✓ 生成长按事件，持续时间: %lu ms", buttonEvent.duration);
     } else {
-      // 检查是否为双击
+      // 短按：检查是否为双击的第二次点击
       if (waitingForDoubleClick &&
           (currentTime - lastClickTime) <= doubleClickThreshold) {
+        // 这是双击的第二次点击
         buttonEvent.state = BUTTON_DOUBLE_PRESSED;
         buttonEvent.processed = false;
         hasEvent = true;
         waitingForDoubleClick = false;
+        pendingSingleClick = false;  // 取消待处理的单击事件
         DEBUG_INFO("INPUT", "✓ 生成双击事件");
       } else {
-        // 立即生成单击事件
-        buttonEvent.state = BUTTON_PRESSED;
-        buttonEvent.processed = false;
-        hasEvent = true;
-        // 设置等待双击状态，为下次可能的双击做准备
+        // 这可能是双击的第一次点击，延迟处理
+        if (pendingSingleClick) {
+          // 如果已经有等待中的单击事件，立即处理它
+          DEBUG_INFO("INPUT", "✓ 处理之前的单击事件");
+          // 这里可以选择立即处理或覆盖，我们选择立即处理
+        }
+        
+        // 设置单击事件为待处理状态
+        pendingSingleClick = true;
+        singleClickDelayTime = currentTime;
         waitingForDoubleClick = true;
         lastClickTime = currentTime;
-        DEBUG_INFO("INPUT", "✓ 生成单击事件，持续时间: %lu ms", buttonEvent.duration);
+        DEBUG_INFO("INPUT", "✓ 设置单击事件为待处理状态，等待可能的双击");
       }
     }
   }
 
-  // 检查双击超时，清理等待状态
-  if (waitingForDoubleClick &&
-      (currentTime - lastClickTime) > doubleClickThreshold) {
+  // 处理待处理的单击事件（超时后生成单击事件）
+  if (pendingSingleClick && 
+      (currentTime - singleClickDelayTime) > doubleClickThreshold) {
+    // 双击等待超时，生成单击事件
+    buttonEvent.state = BUTTON_PRESSED;
+    buttonEvent.processed = false;
+    hasEvent = true;
+    pendingSingleClick = false;
     waitingForDoubleClick = false;
-    DEBUG_DEBUG("INPUT", "双击等待超时，清理状态");
+    DEBUG_INFO("INPUT", "✓ 双击等待超时，生成单击事件");
   }
 }
 
