@@ -27,14 +27,17 @@ private:
   
   // 低功耗模式
   bool lowPowerMode = false;
+  
+  // 唤醒标志
+  bool wakeupFlag = false;
 
   // 根据芯片类型选择合适的电源管理配置
   #ifdef CONFIG_IDF_TARGET_ESP32C3
-    esp_pm_config_esp32c3_t pmConfig;
+    esp_pm_config_t pmConfig;
   #elif defined(CONFIG_IDF_TARGET_ESP32)
     esp_pm_config_esp32_t pmConfig;
   #else
-    esp_pm_config_esp32_t pmConfig;  // 默认使用ESP32配置
+    esp_pm_config_t pmConfig;  // 默认使用通用配置
   #endif
   
   // 内部方法
@@ -82,6 +85,10 @@ public:
   void wakeUp();
   bool isWakeupFromSleep() const;
   esp_sleep_wakeup_cause_t getWakeupCause() const;
+  
+  // 唤醒处理
+  bool hasWakeupEvent() const;
+  void clearWakeupEvent();
   
   // 电源事件
   bool hasPowerEvent() const;

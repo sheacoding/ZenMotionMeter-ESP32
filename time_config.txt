@@ -1,0 +1,45 @@
+=====================================
+    zenMotionMeter 时间配置说明
+=====================================
+
+当前默认时间设置：
+- 年份: 2025
+- 月份: 7
+- 日期: 13
+- 小时: 13 (下午1点)
+- 分钟: 55
+- 秒数: 0
+
+如何修改默认时间：
+1. 打开 include/config.h 文件
+2. 找到 "初始时间配置" 部分
+3. 修改以下宏定义：
+   #define DEFAULT_YEAR 2025      // 修改为所需年份
+   #define DEFAULT_MONTH 7        // 修改为所需月份 (1-12)
+   #define DEFAULT_DAY 13         // 修改为所需日期 (1-31)
+   #define DEFAULT_HOUR 13        // 修改为所需小时 (0-23)
+   #define DEFAULT_MINUTE 55      // 修改为所需分钟 (0-59)
+   #define DEFAULT_SECOND 0       // 修改为所需秒数 (0-59)
+4. 保存文件并重新编译程序
+
+示例：
+要设置时间为 2025年7月13日 14:30:00，请修改为：
+   #define DEFAULT_YEAR 2025
+   #define DEFAULT_MONTH 7
+   #define DEFAULT_DAY 13
+   #define DEFAULT_HOUR 14
+   #define DEFAULT_MINUTE 30
+   #define DEFAULT_SECOND 0
+
+注意事项：
+- 月份范围: 1-12 (1=1月, 12=12月)
+- 小时范围: 0-23 (0=午夜, 12=中午, 23=晚上11点)
+- 分钟和秒数范围: 0-59
+- 修改后需要重新编译并上传程序到设备
+
+时间格式：
+- 显示格式: YYYY/MM/DD HH:MM:SS
+- 例如: 2025/07/13 14:30:00
+
+调试信息：
+启动时会在串口输出当前时间配置信息，可以通过串口监视器查看。

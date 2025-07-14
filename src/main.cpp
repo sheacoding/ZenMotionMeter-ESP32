@@ -293,6 +293,20 @@ void updateSensors() {
 }
 
 void updateDisplay() {
+  
+  // 检查是否有唤醒事件
+  if (powerManager.hasWakeupEvent()) {
+    DEBUG_INFO("MAIN", "从睡眠唤醒，恢复显示状态");
+    
+    // 恢复系统状态到主菜单
+    changeSystemState(STATE_MAIN_MENU, "从休眠唤醒");
+    
+    // 显示唤醒信息
+    displayManager.showMessage("系统唤醒", 1000);
+    
+    // 清除唤醒事件
+    powerManager.clearWakeupEvent();
+  }
   // 更新显示数据
   zenData.currentSession = dataManager.getCurrentSession();
   zenData.todayStats = dataManager.getTodayStats();
@@ -736,6 +750,11 @@ void handleSystemState() {
     case STATE_BOOT_ANIMATION:
       handleBootAnimationState();
       break;
+    case STATE_SLEEP:
+      // 确保清理休眠状态，如需特殊处理可在此添加
+      DEBUG_PRINTLN("正在处理唤醒后的恢复过程");
+      changeSystemState(STATE_MAIN_MENU, "恢复后切换到主菜单");
+      break;
     case STATE_MAIN_MENU:
       handleMainMenuState();
       break;
@@ -759,9 +778,6 @@ void handleSystemState() {
       break;
     case STATE_HISTORY:
       handleHistoryState();
-      break;
-    case STATE_SLEEP:
-      handleSleepState();
       break;
   }
 }
