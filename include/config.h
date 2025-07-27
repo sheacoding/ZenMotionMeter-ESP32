@@ -4,7 +4,7 @@
 // ==================== 项目信息 ====================
 #define PROJECT_NAME "气定神闲仪 (Zen-Motion Meter)"
 #define PROJECT_VERSION "1.0.0"
-#define AUTHOR "Zen-Motion Team"
+#define AUTHOR "ericoding"
 
 // ==================== 硬件引脚配置 ====================
 // 智能引脚配置 - 根据开发板类型自动选择
@@ -139,10 +139,50 @@
 #define BOOT_ANIMATION_FRAME_DELAY 500 // 每帧延迟 (ms)
 
 // ==================== 主菜单配置 ====================
+// 主菜单布局配置 - 4个选项均匀分布在64像素高度屏幕上
 #define MENU_ITEM_HEIGHT 12          // 菜单项高度
-#define MENU_ITEM_SPACING 2          // 菜单项间距
+#define MENU_ITEM_SPACING 4          // 菜单项间距（4个选项+3个间距=12*4+4*3=60像素）
 #define MENU_SCROLL_DELAY 200        // 菜单滚动延迟 (ms)
 #define MENU_HIGHLIGHT_WIDTH 2       // 高亮边框宽度
+#define MENU_START_Y 16              // 菜单起始Y坐标，顶部留16像素避免与电池图标重叠
+#define MENU_ITEM_PADDING 2          // 菜单项内边距
+#define MENU_SIDE_MARGIN 5           // 菜单左右边距
+
+// 开机动画精确垂直居中布局配置
+// 屏幕总高度64像素，重新计算实现完美垂直居中
+#define BOOT_CONTENT_HEIGHT 42       // 总内容高度（从标题到进度文本）
+#define BOOT_TOP_MARGIN 11           // 顶部边距 (64-42)/2 = 11
+#define BOOT_BOTTOM_MARGIN 11        // 底部边距，确保垂直居中
+
+// Y坐标定义 - 基于字体基线位置精确计算，确保元素间距合理
+#define BOOT_TITLE_Y 20              // 中文主标题Y坐标
+#define BOOT_SUBTITLE_Y 32           // 英文副标题Y坐标
+#define BOOT_VERSION_Y 44            // 版本信息Y坐标
+#define BOOT_PROGRESS_BAR_Y 50       // 进度条Y坐标
+#define BOOT_PROGRESS_TEXT_Y 62      // 进度文本Y坐标 - 与进度条保持足够距离
+
+// 进度条配置
+#define BOOT_PROGRESS_BAR_WIDTH 80   // 进度条宽度（在128像素屏幕上居中）
+#define BOOT_PROGRESS_BAR_HEIGHT 3   // 进度条高度
+#define BOOT_PROGRESS_BAR_BORDER 1   // 进度条边框宽度
+
+// 元素间距配置 - 确保视觉平衡
+#define BOOT_TITLE_TO_SUBTITLE 14    // 主标题到副标题间距
+#define BOOT_SUBTITLE_TO_VERSION 11  // 副标题到版本信息间距
+#define BOOT_VERSION_TO_PROGRESS 7   // 版本信息到进度条间距
+#define BOOT_PROGRESS_TO_TEXT 8      // 进度条到进度文本间距
+
+// 装饰元素配置
+#define BOOT_DOT_RADIUS 1            // 装饰点半径
+#define BOOT_DOT_OFFSET 8            // 装饰点距离文本的偏移
+
+// 通用布局配置
+#define TITLE_Y 12                   // 页面标题Y坐标
+#define CONTENT_START_Y 25           // 内容区域起始Y坐标
+#define LINE_HEIGHT 10               // 标准行高
+#define TEXT_MARGIN 5                // 文本边距
+#define STATUS_ICON_Y 0              // 状态图标Y坐标
+#define BOTTOM_TEXT_Y 60             // 底部文本Y坐标
 
 // ==================== 时间配置 ====================
 // 计时器配置
@@ -152,6 +192,43 @@
 
 // 数据保存间隔
 #define DATA_SAVE_INTERVAL 60000     // 1分钟保存一次
+
+// ==================== 初始时间配置 ====================
+// 编译时默认时间设置 - 用户可以在编译前手动修改这些值
+// 格式：年-月-日 时:分:秒
+#ifndef DEFAULT_YEAR
+  #define DEFAULT_YEAR 2025         // 默认年份
+#endif
+#ifndef DEFAULT_MONTH
+  #define DEFAULT_MONTH 7           // 默认月份 (1-12)
+#endif
+#ifndef DEFAULT_DAY
+  #define DEFAULT_DAY 13            // 默认日期 (1-31)
+#endif
+#ifndef DEFAULT_HOUR
+  #define DEFAULT_HOUR 13           // 默认小时 (0-23)
+#endif
+#ifndef DEFAULT_MINUTE
+  #define DEFAULT_MINUTE 55         // 默认分钟 (0-59)
+#endif
+#ifndef DEFAULT_SECOND
+  #define DEFAULT_SECOND 0          // 默认秒数 (0-59)
+#endif
+
+// 时间设置提示信息
+#if DEBUG
+  #define TIME_CONFIG_INFO() \
+    do { \
+      DEBUG_INFO("TIME_CONFIG", "=== 默认时间配置 ==="); \
+      DEBUG_INFO("TIME_CONFIG", "默认时间: %04d/%02d/%02d %02d:%02d:%02d", \
+        DEFAULT_YEAR, DEFAULT_MONTH, DEFAULT_DAY, \
+        DEFAULT_HOUR, DEFAULT_MINUTE, DEFAULT_SECOND); \
+      DEBUG_INFO("TIME_CONFIG", "提示: 可在编译前修改 config.h 中的 DEFAULT_* 宏定义"); \
+    } while(0)
+#else
+  #define TIME_CONFIG_INFO()
+#endif
+
 
 // ==================== 音频配置 ====================
 // 蜂鸣器配置
@@ -323,6 +400,26 @@ enum MainMenuOption {
   MENU_SYSTEM_SETTINGS, // 系统设置
   MENU_SENSOR_CALIBRATION, // 传感器校准
   MENU_OPTION_COUNT     // 菜单选项总数
+};
+
+// ==================== 设置菜单选项定义 ====================
+enum SettingsMenuItem {
+  SETTINGS_STABILITY_THRESHOLD,  // 稳定性阈值
+  SETTINGS_SOUND,               // 声音开关
+  SETTINGS_AUTO_SLEEP,          // 自动休眠
+  SETTINGS_PRACTICE_TIME,       // 练习时长
+  SETTINGS_DATE_TIME,           // 日期时间设置
+  SETTINGS_ITEM_COUNT          // 设置项总数
+};
+
+// ==================== 日期时间设置子菜单 ====================
+enum DateTimeEditItem {
+  DATETIME_YEAR,     // 年
+  DATETIME_MONTH,    // 月
+  DATETIME_DAY,      // 日
+  DATETIME_HOUR,     // 时
+  DATETIME_MINUTE,   // 分
+  DATETIME_ITEM_COUNT // 项目总数
 };
 
 // I2C时钟速度数组声明

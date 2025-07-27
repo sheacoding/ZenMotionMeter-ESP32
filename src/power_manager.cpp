@@ -279,6 +279,9 @@ void PowerManager::enterLightSleep() {
   
   // 唤醒后继续执行
   DEBUG_PRINTLN("从轻度休眠中唤醒");
+  
+  // 调用唤醒处理函数
+  wakeUp();
 }
 
 void PowerManager::enterDeepSleep() {
@@ -291,6 +294,9 @@ void PowerManager::enterDeepSleep() {
 void PowerManager::wakeUp() {
   updateActivity();
   DEBUG_PRINTLN("系统唤醒");
+  
+  // 设置唤醒标志，让主程序知道需要恢复显示状态
+  wakeupFlag = true;
 }
 
 bool PowerManager::isWakeupFromSleep() const {
@@ -372,4 +378,13 @@ void PowerManager::printSleepInfo() const {
         break;
     }
   }
+}
+
+bool PowerManager::hasWakeupEvent() const {
+  return wakeupFlag;
+}
+
+void PowerManager::clearWakeupEvent() {
+  wakeupFlag = false;
+  DEBUG_DEBUG("POWER", "唤醒事件已清除");
 }
